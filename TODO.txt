@@ -1,0 +1,4 @@
+* better PC compatible keyboard, I ve already done this in a good prc
+* find and fix crash (check tiemu code)
+* screen scale, speed, maybe screen size too, in config file
+

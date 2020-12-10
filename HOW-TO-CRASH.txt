@@ -1,1 +1,2 @@
 * [ctrl], [rshift]+[8], [8], [rshift]+[0], [ENTER]
+* just open left parenthesis... it will take no much

@@ -27,7 +27,7 @@ static int SCREEN_SCALE = 4;
 
 /* 12 MHz = 12k cycles / 1 ms */
 //#define CYCLES_PER_TICK 12000
-#define CYCLES_PER_TICK 0x10000
+static int CYCLES_PER_TICK = 0x8000;
 
 /* 40 Hz = 25 ms / frame */
 #define FRAME_TICKS     25
