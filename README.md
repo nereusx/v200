@@ -9,6 +9,8 @@ To do and notice
 
         a819756f84bcb5c60729b9c2fe842473d3460ae5cd211aca1d8da4e09a04dcf3  os.v2u
 
+2.1 [Direct link](https://www.education.ti.com/download/en/ed-tech/F6B42C0A9A1045A7B7C65A750C28C5F4/37E834B296B94762950DE4972B5BDDCC/os.v2u)
+
 3. `make -j1`
 
 4. `./v200 os.v2u`
