@@ -23,10 +23,11 @@
 #define SCREEN_HEIGHT   128
 
 #define SCREEN_PADDING  8
-#define SCREEN_SCALE    2
+static int SCREEN_SCALE = 4;
 
 /* 12 MHz = 12k cycles / 1 ms */
-#define CYCLES_PER_TICK 12000
+//#define CYCLES_PER_TICK 12000
+#define CYCLES_PER_TICK 0x10000
 
 /* 40 Hz = 25 ms / frame */
 #define FRAME_TICKS     25
@@ -38,6 +39,10 @@ void *ti_ram = NULL, *ti_flash = NULL;
 
 uint8_t keyboard_state[81] = {0};
 uint8_t keyboard_touched = 0;
+
+static int rshift_state = 0;
+static int rctrl_state = 0;
+//static int ralt_state = 0;
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -172,7 +177,8 @@ unsigned int m68k_read_memory_8(unsigned int addr)
             return io_read8(addr);
         case BANK_WTF:
             return 0;
-    }
+	    }
+	return 0;
 }
 
 unsigned int m68k_read_memory_16(unsigned int addr)
@@ -190,7 +196,8 @@ unsigned int m68k_read_memory_16(unsigned int addr)
         case BANK_WTF:
             printf("Unhandled weird read @ %08x\n", addr);
             return 0;
-    }
+	    }
+	return 0;
 }
 
 void m68k_write_memory_8(unsigned int addr, unsigned int value)
@@ -355,20 +362,60 @@ void read_rom(const char *path)
     // The calculator seems to boot without, but it's probably not happy
 }
 
+#define V2_STORE	31
+#define V2_LPAR		34
+#define V2_RPAR		33
+#define V2_MUL		56
+#define V2_DIV		47
+#define V2_PLUS		67
+#define V2_THETA	70
+#define V2_TAN		40
+#define	V2_COS		41
+#define V2_SIN		42
+#define V2_LN		50
+#define V2_MODE		66
+#define V2_NEGATE	72
+
 int sdl_to_ti_kbd(SDL_Keycode key)
 {
+	if ( rctrl_state ) {
+		switch ( key ) {
+		case SDLK_u:		return V2_THETA;
+		case SDLK_t:		return V2_TAN;
+		case SDLK_c:		return V2_COS;
+		case SDLK_s:		return V2_SIN;
+		case SDLK_m:		return V2_MODE;
+		case SDLK_l:		return V2_LN;
+		case SDLK_q:		return -1; // quit somehow
+        case SDLK_MINUS:	return V2_NEGATE;
+        case SDLK_RIGHT:    return V2_STORE;
+		case SDLK_PERIOD:	return V2_STORE;
+			}
+		}
+	
+	if ( rshift_state ) {
+		switch ( key ) {
+		case SDLK_9:		return V2_LPAR;
+		case SDLK_8:		return V2_MUL;
+		case SDLK_u:		return V2_THETA; // this is where the theta is on greek keyboard
+		case SDLK_EQUALS:	return V2_PLUS;
+		case SDLK_PERIOD:	return V2_STORE;
+		case SDLK_0:		return V2_RPAR;
+        case SDLK_MINUS:	return V2_NEGATE;
+			}
+		}
+	
     switch (key) {
         case SDLK_DOWN:     return 0;
         case SDLK_RIGHT:    return 1;
         case SDLK_UP:       return 2;
         case SDLK_LEFT:     return 3;
+        case SDLK_RALT:		return 4; // hand
                             // hand = 4???
-        case SDLK_LSHIFT:
-        case SDLK_RSHIFT:   return 5; // shift
-        case SDLK_LALT:
-        case SDLK_RALT:     return 6; // diamond
-        case SDLK_LCTRL:
-        case SDLK_RCTRL:    return 7; // 2nd
+							
+        case SDLK_LSHIFT:	return 5; // shift
+        case SDLK_LALT:     return 6; // diamond
+        case SDLK_LCTRL:    return 7; // 2nd
 
         case SDLK_3:        return 8;
         case SDLK_2:        return 9;
@@ -376,7 +423,7 @@ int sdl_to_ti_kbd(SDL_Keycode key)
         case SDLK_F8:       return 11;
         case SDLK_w:        return 12;
         case SDLK_s:        return 13;
-        case SDLK_z:        return 14;
+		case SDLK_z:        return 14;
                             // no key @ 15
 
         case SDLK_6:        return 16;
@@ -388,8 +435,8 @@ int sdl_to_ti_kbd(SDL_Keycode key)
         case SDLK_x:        return 22;
                             // no key @ 23
 
-        case SDLK_9:        return 24;
-        case SDLK_8:        return 25;
+	case SDLK_9:        return 24;
+	case SDLK_8:        return 25;
         case SDLK_7:        return 26;
         case SDLK_F7:       return 27;
         case SDLK_r:        return 28;
@@ -419,7 +466,7 @@ int sdl_to_ti_kbd(SDL_Keycode key)
         case SDLK_KP_ENTER: return 49;
                             // ln = 50
         case SDLK_F1:       return 51;
-        case SDLK_u:        return 52;
+		case SDLK_u:        return 52;
         case SDLK_j:        return 53;
         case SDLK_n:        return 54;
                             // ^ = 55
@@ -431,7 +478,7 @@ int sdl_to_ti_kbd(SDL_Keycode key)
         case SDLK_i:        return 60;
         case SDLK_k:        return 61;
         case SDLK_m:        return 62;
-        case SDLK_EQUALS:   return 63;
+		case SDLK_EQUALS:   return 63;
 
                             // no key @ 64
         case SDLK_ESCAPE:   return 65;
@@ -439,12 +486,13 @@ int sdl_to_ti_kbd(SDL_Keycode key)
         case SDLK_KP_PLUS:  return 67;
         case SDLK_o:        return 68;
         case SDLK_l:        return 69;
-        case SDLK_SLASH:    return 70; // theta
+//        case SDLK_SLASH:    return 70; // theta
+        case SDLK_SLASH:    return V2_DIV;
         case SDLK_BACKSPACE: return 71;
 
                             // negate = 72
-        case SDLK_PERIOD:   return 73;
-        case SDLK_0:        return 74;
+		case SDLK_PERIOD:   return 73;
+		case SDLK_0:        return 74;
         case SDLK_F4:       return 75;
         case SDLK_q:        return 76;
         case SDLK_a:        return 77;
@@ -509,7 +557,7 @@ int main(int argc, char **argv)
 
     uint32_t white = SDL_MapRGBA(screen_surface->format, 255, 255, 255, 255);
     uint32_t black = SDL_MapRGBA(screen_surface->format, 0,   0,   0,   255);
-    uint32_t gray  = SDL_MapRGBA(screen_surface->format, 128, 128, 128, 255);
+//    uint32_t gray  = SDL_MapRGBA(screen_surface->format, 128, 128, 128, 255);
 
     uint32_t last_tick = SDL_GetTicks();
 
@@ -555,10 +603,15 @@ int main(int argc, char **argv)
                         return 0;
                     case SDL_KEYDOWN:
                     case SDL_KEYUP:
-                        key = sdl_to_ti_kbd(ev.key.keysym.sym);
-                        if (key >= 0) {
-                            keyboard_state[key] = (ev.key.state == SDL_PRESSED);
-                        }
+						switch ( ev.key.keysym.sym ) {
+						case SDLK_RSHIFT:	rshift_state = ( ev.type == SDL_KEYDOWN ); break;
+						case SDLK_RCTRL:	rctrl_state  = ( ev.type == SDL_KEYDOWN ); break;
+//						case SDLK_RALT:		ralt_state   = ( ev.type == SDL_KEYDOWN ); break;
+						default:
+	                        key = sdl_to_ti_kbd(ev.key.keysym.sym);
+	                        if ( key >= 0 )
+	                            keyboard_state[key] = (ev.key.state == SDL_PRESSED);
+	                        }
                         break;
                 }
             }
@@ -570,9 +623,8 @@ int main(int argc, char **argv)
 
         // FIXME: This is a hack. Need to implement real timers.
         static int i = 0;
-        if (i++ > 30) {
+        if ( i ++ > 30 ) 
             m68k_set_irq(1);
-        }
     }
 
     return 0;
