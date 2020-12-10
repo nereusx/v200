@@ -1,5 +1,7 @@
 V200: A TI Voyage-200 emulator
 
+This is Nicholas Christopoulos sandbox, not the original files.
+
 To do and notice
 ================
 
