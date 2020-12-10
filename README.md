@@ -9,7 +9,7 @@ To do and notice
 
         a819756f84bcb5c60729b9c2fe842473d3460ae5cd211aca1d8da4e09a04dcf3  os.v2u
 
-3. `make`
+3. `make -j1`
 
 4. `./v200 os.v2u`
 
