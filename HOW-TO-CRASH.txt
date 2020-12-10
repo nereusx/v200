@@ -1,0 +1,1 @@
+* [ctrl], [rshift]+[8], [8], [rshift]+[0], [ENTER]
